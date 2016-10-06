@@ -20,6 +20,8 @@ addToStore (MkData size items) newitem = MkData _ (addToData items)
 
 data Command = Add String
              | Get Integer
+             | Size
+             | Search String
              | Quit
 
 parseCommand : (cmd : String) -> (args : String) -> Maybe Command
@@ -29,7 +31,9 @@ parseCommand cmd args = case cmd of
                                         Just (Get (cast args))
                                       else
                                         Nothing
+                             "size" => Just Size
                              "quit" => Just Quit
+                             "search" => Just (Search args)
                              _ => Nothing
 
 parse : (input : String) -> Maybe Command
@@ -42,12 +46,29 @@ getEntry pos store = let store_items = items store in
                      Nothing => Just ("Out of range\n", store)
                      Just id => Just (index id store_items ++ "\n", store)
 
+findItem : (string : String) -> (store_items : Vect size String) -> String
+findItem string store_items = findItem0 0 store_items where
+  findItem0 : Int -> (store_items : Vect size String) -> String
+  findItem0 _ [] = ""
+  findItem0 pos (item :: items) = if Strings.isInfixOf string item then
+                                     show(pos) ++ ": " ++ item ++ "\n" ++ (findItem0 (pos + 1) items)
+                                  else
+                                     findItem0 (pos + 1) items
+
+search : (string : String) -> (store : DataStore) -> String
+search string store = let store_items = items store in
+                      findItem string store_items
+
 processInput : DataStore -> String -> Maybe (String, DataStore)
 processInput store inp = case parse inp of
                           Nothing => Just ("Invalid command\n", store)
                           Just (Add item) =>
                             Just(("ID " ++ show (size store) ++ "\n"), (addToStore store item))
+                          Just Size =>
+                            Just(("ID " ++ show (size store) ++ "\n"), store)
                           Just (Get pos) => getEntry pos store
+                          Just (Search item) =>
+                            Just(((search item store) ++ "\n"), store)
                           Just Quit => Nothing
 
 main : IO ()
