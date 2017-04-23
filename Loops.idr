@@ -2,6 +2,13 @@ module Main
 
 import System
 
+readNumber : IO (Maybe Nat)
+readNumber = do
+  input <- getLine
+  if all isDigit (unpack input)
+  then pure (Just (cast input))
+  else pure Nothing
+  
 countdown : (secs : Nat) -> IO ()
 countdown Z = putStrLn "Lift off!"
 countdown (S secs) = do
@@ -16,7 +23,8 @@ countdowns = do
   | Nothing => do
       putStrLn "Invalid input"
       countdowns
-      countdown startNum
-      putStr "Another (y/n)? "
-      yn <- getLine
-      if yn == "y" then countdowns else pure ()
+  countdown startNum
+  putStr "Another (y/n)? "
+  yn <- getLine
+  if yn == "y" then countdowns
+               else pure ()
